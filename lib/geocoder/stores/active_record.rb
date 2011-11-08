@@ -88,6 +88,7 @@ module Geocoder::Store
         lat_attr = geocoder_options[:latitude]
         lon_attr = geocoder_options[:longitude]
         options[:bearing] = :linear unless options.include?(:bearing)
+        options[:geodata] = true unless options.include?(:geodata)
         bearing = case options[:bearing]
         when :linear
           "CAST(" +
@@ -115,10 +116,16 @@ module Geocoder::Store
           "COS(#{latitude} * PI() / 180) * COS(#{lat_attr} * PI() / 180) * " +
           "POWER(SIN((#{longitude} - #{lon_attr}) * PI() / 180 / 2), 2) ))"
         conditions = ["#{distance} <= ?", radius]
+        if options[:geodata]
+          select = "#{options[:select] || '*'}, " +
+                   "#{distance} AS distance" +
+                   (bearing ? ", #{bearing} AS bearing" : "")
+        else
+          select = "#{options[:select] || '*'}"
+        end
+        
         default_near_scope_options(latitude, longitude, radius, options).merge(
-          :select => "#{options[:select] || '*'}, " +
-            "#{distance} AS distance" +
-            (bearing ? ", #{bearing} AS bearing" : ""),
+          :select => select,
           :conditions => add_exclude_condition(conditions, options[:exclude])
         )
       end
