@@ -20,7 +20,14 @@ module Geocoder::Result
           return entity['long_name']
         end
       end
-      return nil # no appropriate components found
+      if entity = address_components_no_type.first
+        return entity['long_name']
+      end
+      return nil
+    end
+
+    def address_components_no_type
+      address_components.select{ |c| c['types'].length == 0 }
     end
 
     def state
